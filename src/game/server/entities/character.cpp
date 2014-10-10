@@ -116,7 +116,7 @@ void CCharacter::HandleNinja()
 	if(m_ActiveWeapon != WEAPON_NINJA)
 		return;
 
-	if ((Server()->Tick() - m_Ninja.m_ActivationTick) > (g_pData->m_Weapons.m_Ninja.m_Duration * Server()->TickSpeed() / 1000))
+	/*if ((Server()->Tick() - m_Ninja.m_ActivationTick) > (g_pData->m_Weapons.m_Ninja.m_Duration * Server()->TickSpeed() / 1000))
 	{
 		// time's up, return
 		m_aWeapons[WEAPON_NINJA].m_Got = false;
@@ -124,7 +124,7 @@ void CCharacter::HandleNinja()
 
 		SetWeapon(m_ActiveWeapon);
 		return;
-	}
+	}*/
 
 	// force ninja Weapon
 	SetWeapon(WEAPON_NINJA);
@@ -448,7 +448,11 @@ void CCharacter::HandleWeapons()
 	FireWeapon();
 
 	// ammo regen
-	int AmmoRegenTime = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Ammoregentime;
+	if ((m_ActiveWeapon == WEAPON_NINJA) || (m_ActiveWeapon == WEAPON_HAMMER))
+		return;
+
+	int AmmoRegenTime = 500;
+
 	if(AmmoRegenTime)
 	{
 		// If equipped and not active, regen ammo?
@@ -475,6 +479,7 @@ void CCharacter::HandleWeapons()
 
 bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
+	NullWeapon();
 	if(m_aWeapons[Weapon].m_Ammo < g_pData->m_Weapons.m_aId[Weapon].m_Maxammo || !m_aWeapons[Weapon].m_Got)
 	{
 		m_aWeapons[Weapon].m_Got = true;
@@ -486,6 +491,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 
 void CCharacter::GiveNinja()
 {
+	NullWeapon();
 	m_Ninja.m_ActivationTick = Server()->Tick();
 	m_aWeapons[WEAPON_NINJA].m_Got = true;
 	m_aWeapons[WEAPON_NINJA].m_Ammo = -1;
@@ -732,10 +738,32 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		return false;
 
 	// m_pPlayer only inflicts half damage on self
-	if(From == m_pPlayer->GetCID())
-		Dmg = max(1, Dmg/2);
+	/*if(From == m_pPlayer->GetCID())
+		Dmg = max(1, Dmg/2);*/
 
-	m_DamageTaken++;
+	int i1;
+	int i2;
+
+	if (GameServer()->GameMode)
+	{
+		i1 = From;
+		i2 = m_pPlayer->GetCID();
+	}
+	else
+	{
+		i1 = m_pPlayer->GetCID();
+		i2 = From;
+	}
+
+	if (GameServer()->m_pController->IsCatcher(i2) > -1)
+	{
+		if (GameServer()->m_pController->IsCatcher(i1) == -1)
+		{
+			GameServer()->m_pController->ChangeCatcher(i2, i1);
+		}
+	}
+
+	/*m_DamageTaken++;
 
 	// create healthmod indicator
 	if(Server()->Tick() < m_DamageTakenTick+25)
@@ -774,7 +802,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		m_Health -= Dmg;
 	}
 
-	m_DamageTakenTick = Server()->Tick();
+	m_DamageTakenTick = Server()->Tick();*/
 
 	// do damage Hit sound
 	if(From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
@@ -807,9 +835,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		return false;
 	}
 
-	if (Dmg > 2)
+	/*if (Dmg > 2)
 		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG);
-	else
+	else*/
 		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
 
 	m_EmoteType = EMOTE_PAIN;
@@ -875,4 +903,13 @@ void CCharacter::Snap(int SnappingClient)
 	}
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
+}
+
+void CCharacter::NullWeapon()
+{
+	// Функция обнуления оружия
+	for (int i = 0; i < 5; i++)
+	{
+		m_aWeapons[i].m_Got = false;
+	}
 }

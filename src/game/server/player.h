@@ -20,7 +20,7 @@ public:
 
 	void TryRespawn();
 	void Respawn();
-	void SetTeam(int Team, bool DoChatMsg=true);
+	void SetTeam(int Team, bool DoChatMsg=false);
 	int GetTeam() const { return m_Team; };
 	int GetCID() const { return m_ClientID; };
 
@@ -34,6 +34,7 @@ public:
 
 	void KillCharacter(int Weapon = WEAPON_GAME);
 	CCharacter *GetCharacter();
+	CTuningParams MyTuning;
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -62,6 +63,7 @@ public:
 	int m_LastChangeInfo;
 	int m_LastEmote;
 	int m_LastKill;
+	int SendBroadcastTick;
 
 	// TODO: clean this up
 	struct
@@ -95,8 +97,16 @@ public:
 		int m_Min;
 		int m_Max;
 	} m_Latency;
+	
+	int TimeDelay;
+	int TempTime;
 
+	//int GetCatcher() const { return m_Catcher; }
+	//void SetCatcher(int Temp) { m_Catcher = Temp; }
 private:
+
+	//int m_Catcher;
+
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
 

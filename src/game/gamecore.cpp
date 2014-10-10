@@ -72,6 +72,7 @@ void CCharacterCore::Reset()
 	m_HookedPlayer = -1;
 	m_Jumped = 0;
 	m_TriggeredEvents = 0;
+	m_DelayTime = 0;
 }
 
 void CCharacterCore::Tick(bool UseInput)
@@ -93,6 +94,9 @@ void CCharacterCore::Tick(bool UseInput)
 	float MaxSpeed = Grounded ? m_pWorld->m_Tuning.m_GroundControlSpeed : m_pWorld->m_Tuning.m_AirControlSpeed;
 	float Accel = Grounded ? m_pWorld->m_Tuning.m_GroundControlAccel : m_pWorld->m_Tuning.m_AirControlAccel;
 	float Friction = Grounded ? m_pWorld->m_Tuning.m_GroundFriction : m_pWorld->m_Tuning.m_AirFriction;
+
+	if (m_DelayTime > 0)
+		m_DelayTime--;
 
 	// handle input
 	if(UseInput)
@@ -219,6 +223,8 @@ void CCharacterCore::Tick(bool UseInput)
 				vec2 ClosestPoint = closest_point_on_line(m_HookPos, NewPos, pCharCore->m_Pos);
 				if(distance(pCharCore->m_Pos, ClosestPoint) < PhysSize+2.0f)
 				{
+					if (m_DelayTime > 0)
+						continue;
 					if (m_HookedPlayer == -1 || distance(m_HookPos, pCharCore->m_Pos) < Distance)
 					{
 						m_TriggeredEvents |= COREEVENT_HOOK_ATTACH_PLAYER;
@@ -313,9 +319,16 @@ void CCharacterCore::Tick(bool UseInput)
 			//player *p = (player*)ent;
 			if(pCharCore == this) // || !(p->flags&FLAG_ALIVE)
 				continue; // make sure that we don't nudge our self
+			
+			//if(m_Id != -1 && !m_pTeams->CanCollide(m_Id, i))
+			//	continue;
 
 			// handle player <-> player collision
 			float Distance = distance(m_Pos, pCharCore->m_Pos);
+
+			if (m_DelayTime > 0 && Distance < 35.0f)
+				continue;
+
 			vec2 Dir = normalize(m_Pos - pCharCore->m_Pos);
 			if(m_pWorld->m_Tuning.m_PlayerCollision && Distance < PhysSize*1.25f && Distance > 0.0f)
 			{
@@ -383,6 +396,8 @@ void CCharacterCore::Move()
 				if(!pCharCore || pCharCore == this)
 					continue;
 				float D = distance(Pos, pCharCore->m_Pos);
+				if (m_DelayTime > 0 && D < 35.0f)
+					continue;
 				if(D < 28.0f && D > 0.0f)
 				{
 					if(a > 0.0f)

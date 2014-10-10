@@ -414,6 +414,9 @@
     <ClInclude Include="src\game\generated\server_data.h">
       <Filter>game\generated</Filter>
     </ClInclude>
+    <ClInclude Include="src\game\server\gamemodes\har.h">
+      <Filter>game\server\gamemodes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base\system.c">
@@ -730,6 +733,9 @@
     </ClCompile>
     <ClCompile Include="src\game\generated\server_data.cpp">
       <Filter>game\generated</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game\server\gamemodes\har.cpp">
+      <Filter>game\server\gamemodes</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

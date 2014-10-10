@@ -21,6 +21,10 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_SpectatorID = SPEC_FREEVIEW;
 	m_LastActionTick = Server()->Tick();
 	m_TeamChangeTick = Server()->Tick();
+	TimeDelay = 0;
+	TempTime = 0;
+	SendBroadcastTick = 0;
+	//	m_Catcher = -1;
 }
 
 CPlayer::~CPlayer()
@@ -171,6 +175,11 @@ void CPlayer::OnDisconnect(const char *pReason)
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", m_ClientID, Server()->ClientName(m_ClientID));
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
 	}
+
+	if (GameServer()->m_pController->IsCatcher(m_ClientID) > -1)
+	{
+		GameServer()->m_pController->ChangeCatcher(m_ClientID, -1);
+	}
 }
 
 void CPlayer::OnPredictedInput(CNetObj_PlayerInput *NewInput)
@@ -249,6 +258,17 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 		return;
 
 	char aBuf[512];
+
+	if (Team != TEAM_SPECTATORS)
+	{
+		if (Server()->Tick() < TimeDelay)
+		{
+			str_format(aBuf, sizeof(aBuf), "You can't join game! Wait %d seconds!", (TimeDelay - Server()->Tick()) / Server()->TickSpeed());
+			GameServer()->SendChatTarget(GetCID(), aBuf);
+			return;
+		}
+	}
+
 	if(DoChatMsg)
 	{
 		str_format(aBuf, sizeof(aBuf), "'%s' joined the %s", Server()->ClientName(m_ClientID), GameServer()->m_pController->GetTeamName(Team));
@@ -269,6 +289,14 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 
 	if(Team == TEAM_SPECTATORS)
 	{
+		if (GameServer()->m_pController->IsCatcher(m_ClientID) > -1)
+		{
+			GameServer()->m_pController->ChangeCatcher(m_ClientID, -1);
+			if (!GameServer()->GameMode)
+			{
+				TimeDelay = Server()->Tick() + Server()->TickSpeed() * 60; // TODO: Config
+			}
+		}
 		// update spectator modes
 		for(int i = 0; i < MAX_CLIENTS; ++i)
 		{

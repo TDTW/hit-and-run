@@ -13,6 +13,7 @@
 #include "gamemodes/tdm.h"
 #include "gamemodes/ctf.h"
 #include "gamemodes/mod.h"
+#include "gamemodes/har.h"
 
 enum
 {
@@ -34,6 +35,9 @@ void CGameContext::Construct(int Resetting)
 	m_pVoteOptionLast = 0;
 	m_NumVoteOptions = 0;
 	m_LockTeams = 0;
+	
+	GameMode = 0;
+	GameWeapon = 0;
 
 	if(Resetting==NO_RESET)
 		m_pVoteOptionHeap = new CHeap();
@@ -284,6 +288,20 @@ void CGameContext::SendBroadcast(const char *pText, int ClientID)
 	CNetMsg_Sv_Broadcast Msg;
 	Msg.m_pMessage = pText;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	
+	if (ClientID != -1)
+	{
+		if (m_apPlayers[ClientID])
+			m_apPlayers[ClientID]->SendBroadcastTick = Server()->Tick() + Server()->TickSpeed() * 1;
+	}
+	else
+	{
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (m_apPlayers[i])
+				m_apPlayers[i]->SendBroadcastTick = Server()->Tick() + Server()->TickSpeed() * 1;
+		}
+	}
 }
 
 //
@@ -541,6 +559,15 @@ void CGameContext::OnClientEnter(int ClientID)
 
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' team=%d", ClientID, Server()->ClientName(ClientID), m_apPlayers[ClientID]->GetTeam());
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+	
+	str_format(aBuf, sizeof(aBuf), "--------------\n\
+									Welcome to the Hit & Run mod v.0.6.2.2 \n\
+									Server coded by TDTW Team\n\
+									Type /info for more information\n\
+									--------------");
+	SendChatTarget(ClientID, aBuf);
+
+
 
 	m_VoteUpdate = true;
 }
@@ -553,6 +580,7 @@ void CGameContext::OnClientConnected(int ClientID)
 	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, StartTeam);
 	//players[client_id].init(client_id);
 	//players[client_id].client_id = client_id;
+	m_pController->CreateFlags(ClientID);
 
 	(void)m_pController->CheckTeamBalance();
 
@@ -583,6 +611,8 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 
 	(void)m_pController->CheckTeamBalance();
 	m_VoteUpdate = true;
+
+	m_pController->DeleteFlags(ClientID);
 
 	// update spectator modes
 	for(int i = 0; i < MAX_CLIENTS; ++i)
@@ -651,6 +681,86 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 
 			pPlayer->m_LastChat = Server()->Tick();
+
+			// /info
+			if (!str_comp(pMsg->m_pMessage, "/info"))
+			{
+				char aBuf[512];
+				str_format(aBuf, sizeof(aBuf), "------INFO------\n\
+											   Type /rules to read rules of the mod\n\
+											   Type /authors to read info about authors\n\
+											   ----------------");
+				SendChatTarget(ClientID, aBuf);
+				return;
+			}
+			else if (!str_comp(pMsg->m_pMessage, "/rules"))
+			{
+				char aBuf[512];
+				str_format(aBuf, sizeof(aBuf), "-----RULES------\n\
+											   Index of rules:\n\
+											   Type /number_of_page to get info\n\
+											   1-Catchers and players\n\
+											   2-Score system\n\
+											   3-Gamemodes\n\
+											   ----------------");
+				SendChatTarget(ClientID, aBuf);
+
+				return;
+			}
+			else if (!str_comp(pMsg->m_pMessage, "/authors"))
+			{
+				char aBuf[512];
+				str_format(aBuf, sizeof(aBuf), "-----Authors------\n\
+											   Psycho.God <3.\n\
+											   Dark Twist3r\n\
+											   Matodor\n\Caesar\n\
+											   ----------------");
+				SendChatTarget(ClientID, aBuf);
+
+				return;
+			}
+			else if ((!str_comp(pMsg->m_pMessage, "/1")))
+			{
+				char aBuf[640];
+				str_format(aBuf, sizeof(aBuf), "---Catchers and players---\n\
+											   If you a catcher, you must get red flag (if flags is on) and then catch other players by your weapon (sets by config)\n\
+											   When you catch player - your flag will been droped.\n\
+											   Notes:\n\
+											   You can't catch other catchers\n\
+											   You can't catch other players before you get the flag\n\
+											   ---If you a player and game mode is 1 vs. All(type /3 for info)...just run away from angry guys with flag and weapons\n\
+											   But if gamemode is All vs. 1 - catch guys with flags \n\
+											   P.S. Read broadcast messages\n\
+											   ----------------");
+				SendChatTarget(ClientID, aBuf);
+				return;
+			}
+			else if ((!str_comp(pMsg->m_pMessage, "/2")))
+			{
+				char aBuf[512];
+				str_format(aBuf, sizeof(aBuf), "\n---Score system---\n\
+											   Your scores will been incremented every second\n\
+											   If you a player in game mode 1 vs. All (type /3 for more info) or if you a catcher in All vs. 1 game mode\n\
+											   ----------------");
+				SendChatTarget(ClientID, aBuf);
+				return;
+			}
+			else if ((!str_comp(pMsg->m_pMessage, "/3")))
+			{
+				char aBuf[512];
+				str_format(aBuf, sizeof(aBuf), "\n----Gamemodes----\n\
+											   Mod Hit & Run has a two gamemodes:\n\
+											   1) 1 vs. All\n\
+											   2) All vs. 1\n\
+											   ---1 vs. All---\n\
+											   This is a default gamemode: Catchers has a weapon, flag and catch players, players scores are increasing\n\
+											   ---All vs. 1---\n\
+											   This gamemode is inverted 1 vs. All (lol): Catchers has flag, players has weapons, players catch catchers, catchers scores are increasing\n\
+											   Also when you take the flag - you take a 3 seconds immunity\n\
+											   ----------------");
+				SendChatTarget(ClientID, aBuf);
+				return;
+			}
 
 			SendChat(ClientID, Team, pMsg->m_pMessage);
 		}
@@ -920,7 +1030,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 
 			pPlayer->m_LastKill = Server()->Tick();
-			pPlayer->KillCharacter(WEAPON_SELF);
+			//pPlayer->KillCharacter(WEAPON_SELF);
+			SendChatTarget(ClientID, "You can't kill yourself");
 		}
 	}
 	else
@@ -1443,6 +1554,121 @@ void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *p
 	}
 }
 
+void CGameContext::ConSetGameMode(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->GameMode = pResult->GetInteger(0);
+
+	//chat message
+	if (pSelf->GameMode)
+		pSelf->SendChat(-1, CHAT_ALL, "Current game mode: All vs. 1 ");
+	else
+		pSelf->SendChat(-1, CHAT_ALL, "Current game mode: 1 vs. All ");
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		CCharacter *pChr = pSelf->GetPlayerChar(i);
+		if (!pChr)
+			continue;
+
+		pChr->NullWeapon();
+		int Catch = pSelf->m_pController->IsCatcher(i);
+
+		int WeaponType;
+
+		if (Catch > -1)
+		{
+			if (pSelf->GameMode)
+				WeaponType = WEAPON_HAMMER;
+			else
+				WeaponType = pSelf->GameWeapon;
+		}
+		else
+		{
+
+			if (pSelf->GameMode)
+				WeaponType = pSelf->GameWeapon;
+			else
+				WeaponType = WEAPON_HAMMER;
+		}
+
+		if (WeaponType == WEAPON_NINJA)
+			pChr->GiveNinja();
+		else if (WeaponType == WEAPON_HAMMER)
+			pChr->GiveWeapon(WeaponType, -1);
+		else
+			pChr->GiveWeapon(WeaponType, 10);
+
+		pChr->SetWeapon(WeaponType);
+	}
+}
+
+void CGameContext::ConSetGameWeapon(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->GameWeapon = pResult->GetInteger(0);
+
+	switch (pSelf->GameWeapon)
+	{
+	case WEAPON_HAMMER:
+		pSelf->SendChat(-1, CHAT_ALL, "Current game weapon: Hammer");
+		break;
+	case WEAPON_GUN:
+		pSelf->SendChat(-1, CHAT_ALL, "Current game weapon: Gun");
+		break;
+	case WEAPON_SHOTGUN:
+		pSelf->SendChat(-1, CHAT_ALL, "Current game weapon: Shotgun");
+		break;
+	case WEAPON_GRENADE:
+		pSelf->SendChat(-1, CHAT_ALL, "Current game weapon: Grenade");
+		break;
+	case WEAPON_RIFLE:
+		pSelf->SendChat(-1, CHAT_ALL, "Current game weapon: Laser");
+		break;
+	case WEAPON_NINJA:
+		pSelf->SendChat(-1, CHAT_ALL, "Current game weapon: Ninja");
+		break;
+
+	}
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		CCharacter *pChr = pSelf->GetPlayerChar(i);
+		if (!pChr)
+			continue;
+
+		pChr->NullWeapon();
+		int Catch = pSelf->m_pController->IsCatcher(i);
+
+		int WeaponType;
+
+		if (Catch > -1)
+		{
+			if (pSelf->GameMode)
+				WeaponType = WEAPON_HAMMER;
+			else
+				WeaponType = pSelf->GameWeapon;
+		}
+		else
+		{
+
+			if (pSelf->GameMode)
+				WeaponType = pSelf->GameWeapon;
+			else
+				WeaponType = WEAPON_HAMMER;
+		}
+
+		if (WeaponType == WEAPON_NINJA)
+			pChr->GiveNinja();
+		else if (WeaponType == WEAPON_HAMMER)
+			pChr->GiveWeapon(WeaponType, -1);
+		else
+			pChr->GiveWeapon(WeaponType, 10);
+
+		pChr->SetWeapon(WeaponType);
+	}
+}
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -1468,6 +1694,9 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, ConForceVote, this, "Force a voting option");
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, ConClearVotes, this, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
+	
+	Console()->Register("sv_game_mode", "i", CFGFLAG_SERVER, ConSetGameMode, this, "0 - One/vs/All    1 - All/vs/One");
+	Console()->Register("sv_game_weapon", "i", CFGFLAG_SERVER, ConSetGameWeapon, this, "Game weapon");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 }
@@ -1499,6 +1728,8 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 		m_pController = new CGameControllerCTF(this);
 	else if(str_comp(g_Config.m_SvGametype, "tdm") == 0)
 		m_pController = new CGameControllerTDM(this);
+	else if (str_comp(g_Config.m_SvGametype, "har") == 0)
+		m_pController = new CGameControllerHAR(this);
 	else
 		m_pController = new CGameControllerDM(this);
 
