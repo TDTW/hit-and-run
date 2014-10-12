@@ -84,7 +84,7 @@ MACRO_CONFIG_INT(SvVoteKickMin, sv_vote_kick_min, 0, 0, MAX_CLIENTS, CFGFLAG_SER
 MACRO_CONFIG_INT(SvVoteKickBantime, sv_vote_kick_bantime, 5, 0, 1440, CFGFLAG_SERVER, "The time to ban a player if kicked by vote. 0 makes it just use kick")
 
 // H&R Configs // HELL YEAH //
-MACRO_CONFIG_INT(SvSpecJoinLimit, sv_spec_join_limit, 60, 0, 3600, CFGFLAG_SERVER, "Time limit for joining when goes to spec (in sec)")
+MACRO_CONFIG_INT(SvSpecJoinDelay, sv_spec_join_delay, 30, 0, 3600, CFGFLAG_SERVER, "Time delay for joining when goes to spec (in sec)")
 MACRO_CONFIG_INT(SvGameFlag, sv_game_flag, 1, 0, 1, CFGFLAG_SERVER, "Game with flag or not")
 
 // debug

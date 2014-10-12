@@ -21,10 +21,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_SpectatorID = SPEC_FREEVIEW;
 	m_LastActionTick = Server()->Tick();
 	m_TeamChangeTick = Server()->Tick();
-	TimeDelay = 0;
-	TempTime = 0;
-	SendBroadcastTick = 0;
-	//	m_Catcher = -1;
+	m_SpecJoinDelay = 0;
+	m_SendBroadcastTick = 0;
 }
 
 CPlayer::~CPlayer()
@@ -261,9 +259,9 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 
 	if (Team != TEAM_SPECTATORS)
 	{
-		if (Server()->Tick() < TimeDelay)
+		if (Server()->Tick() < m_SpecJoinDelay)
 		{
-			str_format(aBuf, sizeof(aBuf), "You can't join game! Wait %d seconds!", (TimeDelay - Server()->Tick()) / Server()->TickSpeed());
+			str_format(aBuf, sizeof(aBuf), "You can't join game! Wait %d seconds!", (m_SpecJoinDelay - Server()->Tick()) / Server()->TickSpeed());
 			GameServer()->SendChatTarget(GetCID(), aBuf);
 			return;
 		}
@@ -292,9 +290,9 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 		if (GameServer()->m_pController->IsCatcher(m_ClientID) > -1)
 		{
 			GameServer()->m_pController->ChangeCatcher(m_ClientID, -1);
-			if (!GameServer()->GameMode)
+			if (!GameServer()->m_GameMode)
 			{
-				TimeDelay = Server()->Tick() + Server()->TickSpeed() * 60; // TODO: Config
+				m_SpecJoinDelay = Server()->Tick() + Server()->TickSpeed() * g_Config.m_SvSpecJoinDelay;
 			}
 		}
 		// update spectator modes

@@ -65,6 +65,8 @@ public:
 	class CPlayer *GetPlayer() { return m_pPlayer; }
 
 	void NullWeapon();
+
+	int GetCharacterDelayTime() { return m_Core.m_DelayTime; }
 private:
 	// player controlling this character
 	class CPlayer *m_pPlayer;

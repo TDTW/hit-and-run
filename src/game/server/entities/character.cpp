@@ -174,6 +174,9 @@ void CCharacter::HandleNinja()
 				if (distance(aEnts[i]->m_Pos, m_Pos) > (m_ProximityRadius * 2.0f))
 					continue;
 
+				if (aEnts[i]->GetCharacterDelayTime() > 0)
+					continue;
+
 				// Hit a player, give him damage and stuffs...
 				GameServer()->CreateSound(aEnts[i]->m_Pos, SOUND_NINJA_HIT);
 				// set his velocity to fast upward (for now)
@@ -299,6 +302,9 @@ void CCharacter::FireWeapon()
 				CCharacter *pTarget = apEnts[i];
 
 				if ((pTarget == this) || GameServer()->Collision()->IntersectLine(ProjStartPos, pTarget->m_Pos, NULL, NULL))
+					continue;
+
+				if(pTarget->GetCharacterDelayTime() > 0)
 					continue;
 
 				// set his velocity to fast upward (for now)
@@ -744,7 +750,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	int i1;
 	int i2;
 
-	if (GameServer()->GameMode)
+	if (GameServer()->m_GameMode)
 	{
 		i1 = From;
 		i2 = m_pPlayer->GetCID();

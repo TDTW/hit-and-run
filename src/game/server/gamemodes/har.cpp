@@ -59,15 +59,15 @@ void CGameControllerHAR::OnCharacterSpawn(CCharacter *pChr)
 
 	if (Catch > -1)
 	{
-		if (GameServer()->GameMode)
+		if (GameServer()->m_GameMode)
 			WeaponType = WEAPON_HAMMER;
 		else
-			WeaponType = GameServer()->GameWeapon;
+			WeaponType = GameServer()->m_GameWeapon;
 	}
 	else
 	{
-		if (GameServer()->GameMode)
-			WeaponType = GameServer()->GameWeapon;
+		if (GameServer()->m_GameMode)
+			WeaponType = GameServer()->m_GameWeapon;
 		else
 			WeaponType = WEAPON_HAMMER;
 	}
@@ -140,7 +140,7 @@ void CGameControllerHAR::Tick()
 	{
 		for (int i = 0; i < MAX_CLIENTS; i++)
 		{
-			if (GameServer()->GameMode)
+			if (GameServer()->m_GameMode)
 			{
 				if (IGameController::IsCatcher(i) > -1 && GameServer()->m_apPlayers[i]->GetCharacter())
 					if (IsFlagCharacter(i) != -1)
@@ -224,7 +224,7 @@ void CGameControllerHAR::FlagTick()
 
 				F->m_pCarryingCharacter = apCloseCCharacters[i];
 
-				if (GameServer()->GameMode)
+				if (GameServer()->m_GameMode)
 				{
 					GameServer()->m_World.m_Core.m_apCharacters[Index]->m_DelayTime = Server()->TickSpeed() * 3;
 				}
@@ -460,17 +460,10 @@ void CGameControllerHAR::TuneTick()
 
 			//}
 
-			GameServer()->m_apPlayers[i]->TempTime++;
-
 			if (Server()->Tick() % (Server()->TickSpeed() / 5))
 			{
 				// make sure that the damage indicators doesn't group together
-				GameServer()->CreateDamageInd(GameServer()->GetPlayerChar(i)->m_Pos, GameServer()->m_apPlayers[i]->TempTime*0.35f, 1);
-				GameServer()->m_apPlayers[i]->TempTime++;
-			}
-			else
-			{
-				GameServer()->m_apPlayers[i]->TempTime = 0;
+				GameServer()->CreateDamageInd(GameServer()->GetPlayerChar(i)->m_Pos, Server()->Tick() * 0.35f, 1);
 			}
 
 			NewTuning.Set("player_collision", 0);
@@ -502,35 +495,35 @@ void CGameControllerHAR::SendBroadcastTick()
 	{
 		if (!GameServer()->m_apPlayers[i])
 			continue;
-		if (Server()->Tick() > GameServer()->m_apPlayers[i]->SendBroadcastTick)
+		if (Server()->Tick() > GameServer()->m_apPlayers[i]->m_SendBroadcastTick)
 		{
-			if (!GameServer()->GameMode && IGameController::IsCatcher(i) > -1 && IsFlagCharacter(i) == -1)
+			if (!GameServer()->m_GameMode && IGameController::IsCatcher(i) > -1 && IsFlagCharacter(i) == -1)
 			{
 				GameServer()->SendBroadcast("Take the RED flag", i);
 				continue;
 			}
-			if (!GameServer()->GameMode && IGameController::IsCatcher(i) > -1 && IsFlagCharacter(i) > -1)
+			if (!GameServer()->m_GameMode && IGameController::IsCatcher(i) > -1 && IsFlagCharacter(i) > -1)
 			{
 				GameServer()->SendBroadcast("Catch the players", i);
 				continue;
 			}
-			if (!GameServer()->GameMode && IGameController::IsCatcher(i) == -1)
+			if (!GameServer()->m_GameMode && IGameController::IsCatcher(i) == -1)
 			{
 				GameServer()->SendBroadcast("Run away from catchers", i);
 				continue;
 			}
-			if (GameServer()->GameMode && IGameController::IsCatcher(i) == -1)
+			if (GameServer()->m_GameMode && IGameController::IsCatcher(i) == -1)
 			{
 				GameServer()->SendBroadcast("Catch the flagtakers", i);
 				continue;
 			}
-			if (GameServer()->GameMode && IGameController::IsCatcher(i) > -1 && IsFlagCharacter(i) == -1)
+			if (GameServer()->m_GameMode && IGameController::IsCatcher(i) > -1 && IsFlagCharacter(i) == -1)
 			{
 				GameServer()->SendBroadcast("Take the RED flag", i);
 				continue;
 			}
 
-			if (GameServer()->GameMode && IGameController::IsCatcher(i) > -1 && IsFlagCharacter(i) > -1)
+			if (GameServer()->m_GameMode && IGameController::IsCatcher(i) > -1 && IsFlagCharacter(i) > -1)
 			{
 				GameServer()->SendBroadcast("Run away from other players", i);
 				continue;

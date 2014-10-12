@@ -36,8 +36,8 @@ void CGameContext::Construct(int Resetting)
 	m_NumVoteOptions = 0;
 	m_LockTeams = 0;
 	
-	GameMode = 0;
-	GameWeapon = 0;
+	m_GameMode = 0;
+	m_GameWeapon = 0;
 
 	if(Resetting==NO_RESET)
 		m_pVoteOptionHeap = new CHeap();
@@ -292,14 +292,14 @@ void CGameContext::SendBroadcast(const char *pText, int ClientID)
 	if (ClientID != -1)
 	{
 		if (m_apPlayers[ClientID])
-			m_apPlayers[ClientID]->SendBroadcastTick = Server()->Tick() + Server()->TickSpeed() * 1;
+			m_apPlayers[ClientID]->m_SendBroadcastTick = Server()->Tick() + Server()->TickSpeed();
 	}
 	else
 	{
 		for (int i = 0; i < MAX_CLIENTS; i++)
 		{
 			if (m_apPlayers[i])
-				m_apPlayers[i]->SendBroadcastTick = Server()->Tick() + Server()->TickSpeed() * 1;
+				m_apPlayers[i]->m_SendBroadcastTick = Server()->Tick() + Server()->TickSpeed();
 		}
 	}
 }
@@ -560,14 +560,12 @@ void CGameContext::OnClientEnter(int ClientID)
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' team=%d", ClientID, Server()->ClientName(ClientID), m_apPlayers[ClientID]->GetTeam());
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 	
-	str_format(aBuf, sizeof(aBuf), "--------------\n\
-									Welcome to the Hit & Run mod v.0.6.2.2 \n\
-									Server coded by TDTW Team\n\
-									Type /info for more information\n\
-									--------------");
+	str_format(aBuf, sizeof(aBuf), "Welcome to the %s mod", GAME_VERSION);
+	SendChatTarget(ClientID, "--------------");
 	SendChatTarget(ClientID, aBuf);
-
-
+	SendChatTarget(ClientID, "Server coded by TDTW Team");
+	SendChatTarget(ClientID, "Type /info for more information");
+	SendChatTarget(ClientID, "--------------");
 
 	m_VoteUpdate = true;
 }
@@ -685,80 +683,67 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			// /info
 			if (!str_comp(pMsg->m_pMessage, "/info"))
 			{
-				char aBuf[512];
-				str_format(aBuf, sizeof(aBuf), "------INFO------\n\
-											   Type /rules to read rules of the mod\n\
-											   Type /authors to read info about authors\n\
-											   ----------------");
-				SendChatTarget(ClientID, aBuf);
+				SendChatTarget(ClientID, "------INFO------");
+				SendChatTarget(ClientID, "Type /rules to read rules of the mod");
+				SendChatTarget(ClientID, "Type /authors to read info about authors");
+				SendChatTarget(ClientID, "----------------");
 				return;
 			}
 			else if (!str_comp(pMsg->m_pMessage, "/rules"))
 			{
-				char aBuf[512];
-				str_format(aBuf, sizeof(aBuf), "-----RULES------\n\
-											   Index of rules:\n\
-											   Type /number_of_page to get info\n\
-											   1-Catchers and players\n\
-											   2-Score system\n\
-											   3-Gamemodes\n\
-											   ----------------");
-				SendChatTarget(ClientID, aBuf);
-
+				SendChatTarget(ClientID, "------Rules------");
+				SendChatTarget(ClientID, "To get info type:");
+				SendChatTarget(ClientID, "/1 - About catchers and players");
+				SendChatTarget(ClientID, "/2 - Score system");
+				SendChatTarget(ClientID, "/3 - Gamemodes");
+				SendChatTarget(ClientID, "-----------------");
 				return;
 			}
 			else if (!str_comp(pMsg->m_pMessage, "/authors"))
 			{
-				char aBuf[512];
-				str_format(aBuf, sizeof(aBuf), "-----Authors------\n\
-											   Psycho.God <3.\n\
-											   Dark Twist3r\n\
-											   Matodor\n\Caesar\n\
-											   ----------------");
-				SendChatTarget(ClientID, aBuf);
-
+				SendChatTarget(ClientID, "------Authors------");
+				SendChatTarget(ClientID, "Psycho.God <3.");
+				SendChatTarget(ClientID, "Dark Twist3r");
+				SendChatTarget(ClientID, "----Also thx to----");
+				SendChatTarget(ClientID, "Spoki4, Matodor, Caesar and");
+				SendChatTarget(ClientID, "All teeworlds community");
+				SendChatTarget(ClientID, "-------------------");
 				return;
 			}
 			else if ((!str_comp(pMsg->m_pMessage, "/1")))
 			{
-				char aBuf[640];
-				str_format(aBuf, sizeof(aBuf), "---Catchers and players---\n\
-											   If you a catcher, you must get red flag (if flags is on) and then catch other players by your weapon (sets by config)\n\
-											   When you catch player - your flag will been droped.\n\
-											   Notes:\n\
-											   You can't catch other catchers\n\
-											   You can't catch other players before you get the flag\n\
-											   ---If you a player and game mode is 1 vs. All(type /3 for info)...just run away from angry guys with flag and weapons\n\
-											   But if gamemode is All vs. 1 - catch guys with flags \n\
-											   P.S. Read broadcast messages\n\
-											   ----------------");
-				SendChatTarget(ClientID, aBuf);
+				SendChatTarget(ClientID, "------Catchers and players------");
+				SendChatTarget(ClientID, "If you a catcher, you must get red flag (if flags is enabled) and then catch other players by your weapon (sets by config)");
+				SendChatTarget(ClientID, "When you catch someone - your flag will been droped.");
+				SendChatTarget(ClientID, "     Notes:");
+				SendChatTarget(ClientID, "You can't catch other catchers");
+				SendChatTarget(ClientID, "You can't catch someone without flag");
+				SendChatTarget(ClientID, "---If you a player and game mode is 1 vs. All(type /3 for info)...just run away from angry guys with flag and weapons");
+				SendChatTarget(ClientID, "But if gamemode is All vs. 1 - catch guys with flags");
+				SendChatTarget(ClientID, "P.S. Read broadcast messages");
+				SendChatTarget(ClientID, "--------------------------------");
 				return;
 			}
 			else if ((!str_comp(pMsg->m_pMessage, "/2")))
 			{
-				char aBuf[512];
-				str_format(aBuf, sizeof(aBuf), "\n---Score system---\n\
-											   Your scores will been incremented every second\n\
-											   If you a player in game mode 1 vs. All (type /3 for more info) or if you a catcher in All vs. 1 game mode\n\
-											   ----------------");
-				SendChatTarget(ClientID, aBuf);
+				SendChatTarget(ClientID, "------Score system------");
+				SendChatTarget(ClientID, "Your scores will been incremented every second");
+				SendChatTarget(ClientID, "If you a player in game mode 1 vs. All (type /3 for more info) or if you a catcher in All vs. 1 game mode");
+				SendChatTarget(ClientID, "------------------------");
 				return;
 			}
 			else if ((!str_comp(pMsg->m_pMessage, "/3")))
 			{
-				char aBuf[512];
-				str_format(aBuf, sizeof(aBuf), "\n----Gamemodes----\n\
-											   Mod Hit & Run has a two gamemodes:\n\
-											   1) 1 vs. All\n\
-											   2) All vs. 1\n\
-											   ---1 vs. All---\n\
-											   This is a default gamemode: Catchers has a weapon, flag and catch players, players scores are increasing\n\
-											   ---All vs. 1---\n\
-											   This gamemode is inverted 1 vs. All (lol): Catchers has flag, players has weapons, players catch catchers, catchers scores are increasing\n\
-											   Also when you take the flag - you take a 3 seconds immunity\n\
-											   ----------------");
-				SendChatTarget(ClientID, aBuf);
+				SendChatTarget(ClientID, "------Gamemodes------");
+				SendChatTarget(ClientID, "Mod Hit & Run has a two gamemodes:");
+				SendChatTarget(ClientID, "1) 1 vs. All");
+				SendChatTarget(ClientID, "2) All vs. 1");
+				SendChatTarget(ClientID, "---1 vs. All---");
+				SendChatTarget(ClientID, "This is a default gamemode: Catchers has a weapon, flag and catch players, players scores are increasing");
+				SendChatTarget(ClientID, "---All vs. 1---");
+				SendChatTarget(ClientID, "This gamemode is inverted 1 vs. All (lol): Catchers has flag, players has weapons, players catch catchers, catchers scores are increasing");
+				SendChatTarget(ClientID, "Also when you take the flag - you take a 3 seconds immunity");
+				SendChatTarget(ClientID, "---------------------");
 				return;
 			}
 
@@ -1557,10 +1542,10 @@ void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *p
 void CGameContext::ConSetGameMode(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	pSelf->GameMode = pResult->GetInteger(0);
+	pSelf->m_GameMode = pResult->GetInteger(0);
 
 	//chat message
-	if (pSelf->GameMode)
+	if (pSelf->m_GameMode)
 		pSelf->SendChat(-1, CHAT_ALL, "Current game mode: All vs. 1 ");
 	else
 		pSelf->SendChat(-1, CHAT_ALL, "Current game mode: 1 vs. All ");
@@ -1578,16 +1563,16 @@ void CGameContext::ConSetGameMode(IConsole::IResult *pResult, void *pUserData)
 
 		if (Catch > -1)
 		{
-			if (pSelf->GameMode)
+			if (pSelf->m_GameMode)
 				WeaponType = WEAPON_HAMMER;
 			else
-				WeaponType = pSelf->GameWeapon;
+				WeaponType = pSelf->m_GameWeapon;
 		}
 		else
 		{
 
-			if (pSelf->GameMode)
-				WeaponType = pSelf->GameWeapon;
+			if (pSelf->m_GameMode)
+				WeaponType = pSelf->m_GameWeapon;
 			else
 				WeaponType = WEAPON_HAMMER;
 		}
@@ -1606,9 +1591,9 @@ void CGameContext::ConSetGameMode(IConsole::IResult *pResult, void *pUserData)
 void CGameContext::ConSetGameWeapon(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	pSelf->GameWeapon = pResult->GetInteger(0);
+	pSelf->m_GameWeapon = pResult->GetInteger(0);
 
-	switch (pSelf->GameWeapon)
+	switch (pSelf->m_GameWeapon)
 	{
 	case WEAPON_HAMMER:
 		pSelf->SendChat(-1, CHAT_ALL, "Current game weapon: Hammer");
@@ -1644,16 +1629,16 @@ void CGameContext::ConSetGameWeapon(IConsole::IResult *pResult, void *pUserData)
 
 		if (Catch > -1)
 		{
-			if (pSelf->GameMode)
+			if (pSelf->m_GameMode)
 				WeaponType = WEAPON_HAMMER;
 			else
-				WeaponType = pSelf->GameWeapon;
+				WeaponType = pSelf->m_GameWeapon;
 		}
 		else
 		{
 
-			if (pSelf->GameMode)
-				WeaponType = pSelf->GameWeapon;
+			if (pSelf->m_GameMode)
+				WeaponType = pSelf->m_GameWeapon;
 			else
 				WeaponType = WEAPON_HAMMER;
 		}

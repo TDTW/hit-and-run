@@ -63,7 +63,7 @@ public:
 	int m_LastChangeInfo;
 	int m_LastEmote;
 	int m_LastKill;
-	int SendBroadcastTick;
+	int m_SendBroadcastTick;
 
 	// TODO: clean this up
 	struct
@@ -98,22 +98,16 @@ public:
 		int m_Max;
 	} m_Latency;
 	
-	int TimeDelay;
-	int TempTime;
+	int m_SpecJoinDelay;
 
-	//int GetCatcher() const { return m_Catcher; }
-	//void SetCatcher(int Temp) { m_Catcher = Temp; }
 private:
-
-	//int m_Catcher;
-
+	
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
 
 	CGameContext *GameServer() const { return m_pGameServer; }
 	IServer *Server() const;
 
-	//
 	bool m_Spawning;
 	int m_ClientID;
 	int m_Team;

@@ -871,10 +871,10 @@ void IGameController::ChangeDetailCatcher(int Index, bool Catch)
 
 	if (Catch)
 	{
-		if (GameServer()->GameMode)
+		if (GameServer()->m_GameMode)
 			WeaponType = WEAPON_HAMMER;
 		else
-			WeaponType = GameServer()->GameWeapon;
+			WeaponType = GameServer()->m_GameWeapon;
 
 		if (str_comp_num(Server()->ClientName(Index), "> ", 2))
 		{
@@ -885,8 +885,8 @@ void IGameController::ChangeDetailCatcher(int Index, bool Catch)
 	else
 	{
 
-		if (GameServer()->GameMode)
-			WeaponType = GameServer()->GameWeapon;
+		if (GameServer()->m_GameMode)
+			WeaponType = GameServer()->m_GameWeapon;
 		else
 			WeaponType = WEAPON_HAMMER;
 
@@ -952,7 +952,7 @@ void IGameController::ClearCatchers()
 		CPlayer *p = GameServer()->m_apPlayers[i];
 		if (!p) continue;
 
-		p->TimeDelay = Server()->Tick();
+		p->m_SpecJoinDelay = Server()->Tick();
 	}
 
 	for (int i = 0; i < 5; i++)

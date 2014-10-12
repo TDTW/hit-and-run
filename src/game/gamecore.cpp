@@ -223,7 +223,7 @@ void CCharacterCore::Tick(bool UseInput)
 				vec2 ClosestPoint = closest_point_on_line(m_HookPos, NewPos, pCharCore->m_Pos);
 				if(distance(pCharCore->m_Pos, ClosestPoint) < PhysSize+2.0f)
 				{
-					if (m_DelayTime > 0)
+					if (m_DelayTime > 0 || pCharCore->m_DelayTime > 0)
 						continue;
 					if (m_HookedPlayer == -1 || distance(m_HookPos, pCharCore->m_Pos) < Distance)
 					{
@@ -326,7 +326,7 @@ void CCharacterCore::Tick(bool UseInput)
 			// handle player <-> player collision
 			float Distance = distance(m_Pos, pCharCore->m_Pos);
 
-			if (m_DelayTime > 0 && Distance < 35.0f)
+			if (Distance < 35.0f && (m_DelayTime > 0 || pCharCore->m_DelayTime > 0))
 				continue;
 
 			vec2 Dir = normalize(m_Pos - pCharCore->m_Pos);
@@ -396,7 +396,7 @@ void CCharacterCore::Move()
 				if(!pCharCore || pCharCore == this)
 					continue;
 				float D = distance(Pos, pCharCore->m_Pos);
-				if (m_DelayTime > 0 && D < 35.0f)
+				if (D < 35.0f && (m_DelayTime > 0 || pCharCore->m_DelayTime > 0))
 					continue;
 				if(D < 28.0f && D > 0.0f)
 				{
