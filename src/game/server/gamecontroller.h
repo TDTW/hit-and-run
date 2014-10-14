@@ -43,7 +43,7 @@ protected:
 
 	void CycleMap();
 
-	int Catchers[5]; // Index players
+	int m_Catchers[5]; // Index players
 
 	char m_aMapWish[128];
 

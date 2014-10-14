@@ -36,7 +36,7 @@ IGameController::IGameController(class CGameContext *pGameServer)
 
 	for (int i = 0; i < 5; i++)
 	{
-		Catchers[i] = -1;
+		m_Catchers[i] = -1;
 	}
 }
 
@@ -744,7 +744,7 @@ int IGameController::GetCatcher()
 
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if ((IsCatcher(i) > -1) && (GameServer()->m_apPlayers[i]->GetCharacter()))
+		if ((IsCatcher(i) > -1) && (GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS))
 			Count++;
 	}
 
@@ -794,38 +794,24 @@ int IGameController::MinCatcher()
 
 void IGameController::SetCatcher(int Index, bool Catcher)
 {
-	//CPlayer * p = GameServer()->m_apPlayers[Index];
-	//if(!p)
-	//	return;
-
-	if (Catcher)
+	for (int i = 0; i < 5; i++)
 	{
-		for (int i = 0; i < 5; i++)
+		if (Catcher && m_Catchers[i] == -1)
 		{
-			if (Catchers[i] == -1)
-			{
-				Catchers[i] = Index;
-				char aBuf[100];
-				str_format(aBuf, sizeof(aBuf), "[%d] [%d] = %d", Index, i, Index);
-				GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
-				return;
-			}
+			m_Catchers[i] = Index;
+			char aBuf[100];
+			str_format(aBuf, sizeof(aBuf), "[%d] [%d] = %d", Index, i, Index);
+			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+			return;
 		}
-	}
-	else
-	{
-		for (int i = 0; i < 5; i++)
+		else if (!Catcher && m_Catchers[i] == Index)
 		{
-			if (Catchers[i] == Index)
-			{
-				Catchers[i] = -1;
-				char aBuf[100];
-				str_format(aBuf, sizeof(aBuf), "[%d] [%d] = -1", Index, i);
-				GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
-				return;
-			}
+			m_Catchers[i] = -1;
+			char aBuf[100];
+			str_format(aBuf, sizeof(aBuf), "[%d] [%d] = -1", Index, i);
+			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+			return;
 		}
-
 	}
 }
 
@@ -837,7 +823,7 @@ int IGameController::IsCatcher(int Index)
 
 	for (int i = 0; i < 5; i++)
 	{
-		if (Catchers[i] == Index)
+		if (m_Catchers[i] == Index)
 			return i;
 	}
 
@@ -957,7 +943,7 @@ void IGameController::ClearCatchers()
 
 	for (int i = 0; i < 5; i++)
 	{
-		Catchers[i] = -1;
+		m_Catchers[i] = -1;
 		DeleteFlag(i);
 	}
 }

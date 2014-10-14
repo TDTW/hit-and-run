@@ -187,6 +187,8 @@ public:
 	int m_HookedPlayer;
 
 	int m_DelayTime;
+	bool m_Visible;
+	float m_VisibleSize;
 
 	int m_Jumped;
 

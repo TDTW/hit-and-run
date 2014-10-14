@@ -93,6 +93,7 @@ void CGameControllerHAR::Tick()
 	SendBroadcastTick();
 	TuneTick();
 
+	// Change nickname (if catcher)
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if (IGameController::IsCatcher(i) > -1)
@@ -115,12 +116,13 @@ void CGameControllerHAR::Tick()
 		}
 	}
 
+	// Check catchers if enough
 	if (Server()->Tick() % Server()->TickSpeed() == 0)
 	{
 		while (IGameController::MinCatcher() > IGameController::GetCatcher())
 		{
 			int Random = rand() % MAX_CLIENTS;
-			if ((IGameController::IsCatcher(Random) == -1) && (GameServer()->m_apPlayers[Random]->GetCharacter()))
+			if ((IGameController::IsCatcher(Random) == -1) && (GameServer()->m_apPlayers[Random]->GetTeam() != TEAM_SPECTATORS))
 			{
 				ChangeCatcher(-1, Random);
 			}
@@ -129,7 +131,7 @@ void CGameControllerHAR::Tick()
 		while (IGameController::MinCatcher() < IGameController::GetCatcher())
 		{
 			int Random = rand() % MAX_CLIENTS;
-			if ((IGameController::IsCatcher(Random) > -1) && (GameServer()->m_apPlayers[Random]->GetCharacter()))
+			if ((IGameController::IsCatcher(Random) > -1) && (GameServer()->m_apPlayers[Random]->GetTeam() != TEAM_SPECTATORS))
 			{
 				ChangeCatcher(Random, -1);
 			}
@@ -142,13 +144,13 @@ void CGameControllerHAR::Tick()
 		{
 			if (GameServer()->m_GameMode)
 			{
-				if (IGameController::IsCatcher(i) > -1 && GameServer()->m_apPlayers[i]->GetCharacter())
+				if (IGameController::IsCatcher(i) > -1 && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 					if (IsFlagCharacter(i) != -1)
 						GameServer()->m_apPlayers[i]->m_Score++;
 			}
 			else
 			{
-				if (IGameController::IsCatcher(i) == -1 && GameServer()->m_apPlayers[i]->GetCharacter())
+				if (IGameController::IsCatcher(i) == -1 && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 					GameServer()->m_apPlayers[i]->m_Score++;
 			}
 		}
@@ -447,20 +449,9 @@ void CGameControllerHAR::TuneTick()
 		CTuningParams OldTuning = GameServer()->m_apPlayers[i]->MyTuning;
 		CTuningParams NewTuning = OldTuning;
 
-		if (GameServer()->m_World.m_Core.m_apCharacters[i]->m_DelayTime > 0)
+		if (GameServer()->m_World.m_Core.m_apCharacters[i]->m_DelayTime > 0 || !GameServer()->m_World.m_Core.m_apCharacters[i]->m_Visible)
 		{
-			//CCharacter *apCloseCCharacters[MAX_CLIENTS];
-			//int Num = GameServer()->m_World.FindEntities(GameServer()->GetPlayerChar(i)->m_Pos, GameServer()->GetPlayerChar(i)->ms_PhysSize+10, (CEntity**)apCloseCCharacters, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
-			//for (int j=0; j<Num; j++)
-			//{
-			//	if(!apCloseCCharacters[j]->IsAlive() || 
-			//		apCloseCCharacters[j]->GetPlayer()->GetTeam() == TEAM_SPECTATORS ||
-			//		GameServer()->Collision()->IntersectLine(GameServer()->GetPlayerChar(i)->m_Pos, apCloseCCharacters[j]->m_Pos, NULL, NULL))
-			//		continue;
-
-			//}
-
-			if (Server()->Tick() % (Server()->TickSpeed() / 5))
+			if (Server()->Tick() % (Server()->TickSpeed() / 5) && GameServer()->m_World.m_Core.m_apCharacters[i]->m_DelayTime > 0)
 			{
 				// make sure that the damage indicators doesn't group together
 				GameServer()->CreateDamageInd(GameServer()->GetPlayerChar(i)->m_Pos, Server()->Tick() * 0.35f, 1);
@@ -474,7 +465,6 @@ void CGameControllerHAR::TuneTick()
 			NewTuning.Set("player_collision", 1);
 			NewTuning.Set("player_hooking", 1);
 		}
-
 
 		if (mem_comp(&OldTuning, &NewTuning, sizeof(CTuningParams)) != 0)
 		{

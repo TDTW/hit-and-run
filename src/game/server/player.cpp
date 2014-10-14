@@ -107,6 +107,9 @@ void CPlayer::PostTick()
 		}
 	}
 
+	if (m_pCharacter)
+		m_pCharacter->SetVisibleSize(m_pCharacter->GetPlayer()->m_Latency.m_Min + 50.0f);
+		
 	// update view pos for spectators
 	if(m_Team == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW && GameServer()->m_apPlayers[m_SpectatorID])
 		m_ViewPos = GameServer()->m_apPlayers[m_SpectatorID]->m_ViewPos;

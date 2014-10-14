@@ -73,6 +73,8 @@ void CCharacterCore::Reset()
 	m_Jumped = 0;
 	m_TriggeredEvents = 0;
 	m_DelayTime = 0;
+	m_Visible = 1;
+	m_VisibleSize = 40.0f;
 }
 
 void CCharacterCore::Tick(bool UseInput)
@@ -224,7 +226,13 @@ void CCharacterCore::Tick(bool UseInput)
 				if(distance(pCharCore->m_Pos, ClosestPoint) < PhysSize+2.0f)
 				{
 					if (m_DelayTime > 0 || pCharCore->m_DelayTime > 0)
+					{
+						m_Visible = 0;
 						continue;
+					}
+					else
+						m_Visible = 1;
+
 					if (m_HookedPlayer == -1 || distance(m_HookPos, pCharCore->m_Pos) < Distance)
 					{
 						m_TriggeredEvents |= COREEVENT_HOOK_ATTACH_PLAYER;
@@ -326,8 +334,13 @@ void CCharacterCore::Tick(bool UseInput)
 			// handle player <-> player collision
 			float Distance = distance(m_Pos, pCharCore->m_Pos);
 
-			if (Distance < 35.0f && (m_DelayTime > 0 || pCharCore->m_DelayTime > 0))
+			if (Distance < m_VisibleSize && (m_DelayTime > 0 || pCharCore->m_DelayTime > 0))
+			{
+				m_Visible = 0;
 				continue;
+			}
+			else
+				m_Visible = 1;
 
 			vec2 Dir = normalize(m_Pos - pCharCore->m_Pos);
 			if(m_pWorld->m_Tuning.m_PlayerCollision && Distance < PhysSize*1.25f && Distance > 0.0f)
@@ -396,8 +409,14 @@ void CCharacterCore::Move()
 				if(!pCharCore || pCharCore == this)
 					continue;
 				float D = distance(Pos, pCharCore->m_Pos);
-				if (D < 35.0f && (m_DelayTime > 0 || pCharCore->m_DelayTime > 0))
+				if (D < m_VisibleSize && (m_DelayTime > 0 || pCharCore->m_DelayTime > 0))
+				{
+					m_Visible = 0;
 					continue;
+				}
+				else
+					m_Visible = 1;
+
 				if(D < 28.0f && D > 0.0f)
 				{
 					if(a > 0.0f)
